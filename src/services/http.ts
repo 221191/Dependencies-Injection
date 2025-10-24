@@ -1,30 +1,23 @@
 import { Logger } from "./logger";
-
 import type { ApiConfig } from "../types";
 
 export class HTTP {
-  static $inject = ["Logger", "ApiConfig"];
+  static $inject = ["ApiConfig", "Logger"];
 
-  logger: Logger;
-  apiConfig: ApiConfig;
+  constructor(public apiConfig: ApiConfig, public logger: Logger) {}
 
-  constructor(apiConfig: ApiConfig, logger: Logger) {
-    this.apiConfig = apiConfig;
-    this.logger = logger;
-  }
-
-  async get(url: string) {
+  async get<T = unknown>(url: string): Promise<T> {
     const response = await fetch(`${this.apiConfig.path}${url}`);
     if (response.ok) {
-      const responseData = await response.json();
+      const data = (await response.json()) as T;
       this.logger.info(
-        `Status: ${response.status}. Response: ${JSON.stringify(responseData)}`
+        `Status: ${response.status}. Response: ${JSON.stringify(data)}`
       );
-      return responseData;
-    } else {
-      this.logger.error(
-        `Status: ${response.status}. Status Text: ${response.statusText}`
-      );
+      return data;
     }
+    this.logger.error(
+      `Status: ${response.status}. Status Text: ${response.statusText}`
+    );
+    throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
   }
 }
